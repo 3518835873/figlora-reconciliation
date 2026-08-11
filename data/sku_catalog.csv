@@ -1,0 +1,25 @@
+﻿SKU编码,规格编码,商品名称,品类,零售价,经销价
+SKU-001,BLIND-01,BabyCat随机单盒（盲盒早鸟）,盲盒,89,69
+SKU-002,BLIND-02,BabyCat随机单盒（盲盒常规）,盲盒,95,69
+SKU-003,OPEN-BC-01,BabyCat明盒·橘影神偷（橘猫）,明盒,100,69
+SKU-004,OPEN-BC-02,BabyCat明盒·折耳骑士（英短折耳）,明盒,100,69
+SKU-005,OPEN-BC-03,BabyCat明盒·笨笨博士（布偶猫）,明盒,100,69
+SKU-006,OPEN-BC-04,BabyCat明盒·奶牛猫（奶牛猫）,明盒,100,69
+SKU-007,OPEN-BC-05,BabyCat明盒·波斯猫（波斯猫）,明盒,100,69
+SKU-008,OPEN-BC-06,BabyCat明盒·软萌夹锁（德文卷毛）,明盒,100,69
+SKU-009,CP-01,BabyCat CP对盒·橘影神偷×折耳骑士,CP对盒,184,138
+SKU-010,CP-02,BabyCat CP对盒·笨笨博士×软萌夹锁,CP对盒,184,138
+SKU-011,CP-03,BabyCat CP对盒·奶牛猫×波斯猫,CP对盒,184,138
+SKU-012,ENDBOX,BabyCat端盒（6只不重复·常规款全套）,端盒,546,414
+SKU-013,ALLIN,BabyCat ALL-IN套装（6常规+2隐藏）,套装,680,520
+SKU-014,LIMIT-01,BabyCat冬季吊卡（限量1000个·济南快闪首发）,限量款,129,89
+SKU-015,ACC-01,BabyCat毛绒挂件·橘影神偷,挂件,39,18
+SKU-016,ACC-02,BabyCat亚克力立牌·BabyCat全家福,立牌,49,22
+SKU-017,ACC-03,BabyCat徽章套装（6枚）,徽章,69,30
+SKU-018,ACC-04,BabyCat摇摇乐钥匙扣·折耳骑士,钥匙扣,29,12
+SKU-019,ACC-05,BabyCatBabyCat帆布袋,帆布袋,59,25
+SKU-020,ACC-06,BabyCat贴纸套装,贴纸,19,6
+SKU-021,ACC-07,BabyCatBabyCat手机壳（iPhone款）,手机壳,49,20
+SKU-022,ACC-08,BabyCatBabyCat冰箱贴（4枚装）,冰箱贴,39,14
+SKU-023,ACC-09,BabyCatBabyCat明信片套装,明信片,29,8
+SKU-024,ACC-10,BabyCatBabyCat毛绒抱枕（30cm）,抱枕,99,45

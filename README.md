@@ -1,0 +1,157 @@
+# 🐱 BabyCat 回款智能对账台
+
+> **菲格洛亚 FIGUEROA 财务工具包** — 经销商回款对账 · 摩点众筹结算 · 艺术家版税 · 展会核算
+>
+> 基于菲格洛亚真实业务场景（BabyCat IP、多经销商渠道、草根艺术家共创、小单快反），用 Claude Code 全程协作搭建。
+
+[![Deploy to GitHub Pages](https://github.com/3518835873/figlora-reconciliation/actions/workflows/pages.yml/badge.svg)](https://github.com/3518835873/figlora-reconciliation/actions/workflows/pages.yml)
+
+**🌐 在线工具**: [https://3518835873.github.io/figlora-reconciliation/](https://3518835873.github.io/figlora-reconciliation/)
+
+---
+
+## 为什么做这个项目
+
+投递菲格洛亚财务实习岗时，我仔细研究了公司的业务模式：
+
+- **BabyCat** 从摩点众筹起步（¥8.8 万 / 444% 达成），经 CTE/HTE 展会，进入名创优品、酷乐潮玩、TOPTOY、KKV 等 1000+ 终端
+- **「小单快反」** 供应链——小批量试产 → 市场验证 → 追单补货，订单频次高、金额分散
+- **「草根艺术家共创」**——艺术家出创意，公司做生产和渠道，销售收入分成
+- **寄售 + 买断 + 平台结算 + 展会零售** 四种渠道并行
+
+这些业务的财务对账，不是通用 ERP 系统能直接覆盖的。于是我用 Claude Code 搭建了这个工具包。
+
+---
+
+## 覆盖模块
+
+| 模块 | 对应 JD / 公司业务 | Excel | Web |
+|------|-------------------|:-----:|:---:|
+| 🔗 经销商回款对账 | "经销商/客户回款的核对与销售收款对账" | ✅ | ✅ |
+| 🎯 摩点众筹结算 | 公司起盘渠道（6% 平台费 · 5-3-2 分阶段） | ✅ | ✅ |
+| 🎨 艺术家版税结算 | "草根艺术家共创"模式（分成 6%-10%） | ✅ | ✅ |
+| 🎪 展会/快闪店核算 | CTE 展 · HTE 展 · 济南快闪（限量吊卡） | ✅ | — |
+| 📋 合同发票台账 | "合同台账的整理与管理""协助开票" | ✅ | — |
+| 📦 代账交接清单 | "与代理记账公司的资料对接与交接" | ✅ | — |
+| 💵 现金日记账 | "现金台账、往来账的日常记录" | ✅ | — |
+| 🧾 费用报销审核 | "费用报销单据的审核、录入与归档" | ✅ | — |
+| 🤖 AI 对账建议 | "对 AI-Native 有自己的认知"（加分项） | — | ✅ |
+
+---
+
+## 快速开始
+
+### Web 工具（在线使用）
+👉 **[打开在线工具](https://3518835873.github.io/figlora-reconciliation/)**
+
+1. 下载示例数据：`data/sales_orders.csv` 和 `data/bank_receipts.csv`
+2. 拖拽上传到对应区域
+3. 点击「开始智能对账」
+4. 查看匹配结果、差异清单、经销商汇总
+5. （可选）上传 `data/dealer_sell_through.csv` 进行三层匹配
+6. （可选）上传 `data/modian_settlements.csv` 查看众筹结算
+
+### Excel 工具（本地使用）
+1. 下载 `excel/Figlora_财务工具包.xlsx`
+2. 用 Excel 或 WPS 打开
+3. 数据已预载，公式自动计算
+4. 查看「📊 Dashboard」获取全景视图
+
+---
+
+## 数据说明
+
+| 数据文件 | 说明 | 行数 |
+|---------|------|:---:|
+| `sku_catalog.csv` | BabyCat 商品目录（8 猫品种 × 多规格 + 配件周边） | 24 |
+| `artist_list.csv` | 艺术家主数据（含分成比例 6%-10%） | 8 |
+| `dealer_list.csv` | 经销商主数据（10 家，4 类渠道） | 10 |
+| `sales_orders.csv` | 销售出库单（2026.05-07，含小单快反批次） | 45 |
+| `dealer_sell_through.csv` | 寄售渠道月度 Sell-Through 报表 | 25 |
+| `bank_receipts.csv` | 银行回款流水（含 14 个差异场景） | 22 |
+| `modian_settlements.csv` | 摩点分阶段结算记录（5-3-2） | 3 |
+| `modian_pledges.csv` | 摩点众筹支持者明细（166 人） | 112 |
+| `expo_revenue.csv` | 展会/快闪店收入 | 3 |
+| `contract_ledger.csv` | 合同台账 | 14 |
+
+数据由 `scripts/generate_data.py` 生成（seed=20260811），所有场景可复现。
+
+---
+
+## 预埋的 14 个对账差异场景
+
+| # | 经销商 | 场景 | 对应现实问题 |
+|---|--------|------|------------|
+| 1 | 名创优品 | 1 笔回款覆盖 3 张销售单 | 多单合并回款，需反向拆解匹配 |
+| 2 | TOPTOY | 回款 ¥50,000 vs 销售 ¥178,480 | 部分回款，剩余未回 |
+| 3 | 沃尔玛 | 2 张销售单逾期完全未回 | 逾期预警 |
+| 4 | 抖音电商 | ¥30,000 预付款无对应销售 | 预收/多收识别 |
+| 5 | 广州潮玩前线 | 回款少 ¥0.67（抹零） | 小额差异核销 |
+| 6 | 酷乐潮玩 | 付款方名称缺"有限"二字 | 名称不规范→模糊匹配 |
+| 7 | 九木杂物社 | 逾期 15 天才到账 | 账龄追踪 |
+| 8 | KKV | 退货冲销 ¥-2,850 | 红字处理 |
+| 9 | 广州潮玩前线 | 回款无备注，金额恰好匹配 | 自动无备注匹配 |
+| 10 | 义乌萌物集 | 回款少 ¥1.00 | 尾差处理 |
+| 11 | 摩点平台 | 首款因支持者退款少 ¥1,999 | 众筹退款影响结算 |
+| 12 | 艺术家 SKU | 同一艺术家 SKU 跨 3 个渠道 | 跨渠道版税汇总 |
+| 13 | 济南快闪 | 冬季吊卡（限量 1000）快闪售 342 个 | 限量款批次追踪 |
+| 14 | TikTok 海外 | USD 回款汇兑损益 ¥326.50 | 跨境汇率差异 |
+
+---
+
+## 技术栈
+
+- **Excel 工具**: Python (openpyxl) 构建，Power Query 数据连接，公式 + 条件格式 + 图表
+- **Web 工具**: 单文件 HTML5 + Vanilla JS (ES6+)，Papa Parse CSV 解析，零后端依赖
+- **数据生成**: Python (csv, random, seed 固定可复现)
+- **AI 协作**: 全程 Claude Code 驱动开发
+- **部署**: GitHub Pages (Actions 自动部署)
+
+---
+
+## 项目结构
+
+```
+figlora-reconciliation/
+├── README.md
+├── data/                    ← 模拟数据（10 个 CSV）
+├── excel/                   ← Excel 财务工具包
+│   └── Figlora_财务工具包.xlsx
+├── web/                     ← Web 对账工具
+│   └── index.html
+├── scripts/                 ← 构建脚本
+│   ├── generate_data.py     ← 数据生成器
+│   └── build_excel.py       ← Excel 构建脚本
+├── docs/                    ← 文档
+│   ├── data_dictionary.md
+│   ├── scenario_list.md
+│   └── power_query_setup.md
+└── .github/workflows/       ← CI/CD
+    └── pages.yml
+```
+
+---
+
+## AI-Native 工作方式
+
+这个项目的每一行代码都是与 **Claude Code** 对话协作完成的：
+
+- 数据模型设计：「帮我分析 BabyCat 的真实产品线，基于摩点众筹页数据生成模拟数据」
+- 匹配引擎：「实现银行回单备注语义解析，能自动区分'货款''预付款''补差款'」
+- Excel 构建：「用 openpyxl 生成 15 个 Sheet 的工作簿，自动注入公式和图表」
+- Web UI：「做一个拖拽上传的对账工具，Tab 切换，彩色状态徽章」
+
+**面试时我会说**：这个项目展示了 AI-Native 财务工作流的雏形——如果接入 Claude API，Web 工具栏里的「AI 对账建议」可以直接理解备注中的自然语言，自动匹配，财务人员只需审核确认。这就是我对「AI-Native 财务」的理解。
+
+---
+
+## 关于我
+
+- **李远枝** | 贺州学院 数字经济专业 | 2027 届应届毕业生
+- 初级会计资格证（初级会计实务 97 / 经济法基础 90）
+- 用友 U8 · 金蝶精斗云 · Python 数据分析 · Claude Code 深度用户
+- 📧 3518835873@qq.com | 📱 17376214387
+
+---
+
+*Built with ❤️ and Claude Code · August 2026*
