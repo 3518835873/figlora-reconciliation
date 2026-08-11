@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BabyCat 回款智能对账台 · FIGUEROA</title>
+<!-- Papa Parse CDN（离线时自动降级为内置简易 CSV 解析器） -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+/* ============================================================
+   BabyCat 回款智能对账台 · FIGUEROA 菲格洛亚
+   品牌色：浅粉 #F5D7E3 / 浅紫 #E8D5F5 / 主紫 #C4A8D4
+   ============================================================ */
+:root{
+  --pink:#F5D7E3;
+  --lilac:#E8D5F5;
+  --purple:#C4A8D4;
+  --purple-dark:#9A7BB8;
+  --ink:#3D3548;
+  --ink-2:#6E6480;
+  --ink-3:#9B92AC;
+  --bg:#FAF5FB;
+  --card:#FFFFFF;
+  --line:#EDE4F2;
+  --green:#4CAF50;      /* 完全匹配 */
+  --amber:#FF9800;      /* 部分匹配 */
+  --red:#F44336;        /* 未回款 */
+  --blue:#2196F3;       /* 预收/多收 */
+  --orange:#FF5722;     /* 名称待核对 */
+  --gray:#9E9E9E;       /* 退货/冲销 */
+  --shadow:0 2px 10px rgba(156,120,180,.10), 0 1px 3px rgba(156,120,180,.08);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  background:linear-gradient(160deg,#FBF7FC 0%,#F7F0FA 45%,#FAF4F6 100%);
+  color:var(--ink);
+  min-height:100vh;
+  font-size:14px;
+}
+
+/* ---------- 头部 ---------- */
+.site-header{
+  background:linear-gradient(120deg,#F5D7E3 0%,#E8D5F5 55%,#D9C2EA 100%);
+  padding:26px 20px 56px;
+  border-bottom:1px solid rgba(196,168,212,.35);
+}
+.header-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo-badge{
+  width:64px;height:64px;border-radius:20px;background:#fff;box-shadow:var(--shadow);
+  display:flex;align-items:center;justify-content:center;font-size:34px;flex:none;
+}
+.site-header h1{font-size:26px;letter-spacing:.5px;color:#4A3557}
+.site-header p{color:#6E5A80;margin-top:4px;font-size:13.5px}
+.header-actions{margin-left:auto}
+.btn{
+  border:none;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .18s;
+}
+.btn-primary{
+  background:linear-gradient(120deg,#C4A8D4,#A98BC6);color:#fff;font-weight:600;
+  padding:12px 26px;font-size:15px;box-shadow:0 4px 14px rgba(154,123,184,.35);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(154,123,184,.45)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.btn-ghost{
+  background:#fff;color:var(--purple-dark);border:1px solid var(--purple);
+  padding:9px 16px;font-size:13px;
+}
+.btn-ghost:hover{background:var(--lilac)}
+.btn-small{padding:7px 14px;font-size:12.5px;border-radius:8px}
+
+/* ---------- 主体布局 ---------- */
+main{max-width:1180px;margin:-34px auto 40px;padding:0 16px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
+
+/* ---------- 上传区 ---------- */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.drop-zone{
+  border:2px dashed var(--purple);border-radius:12px;padding:22px 18px;text-align:center;
+  background:linear-gradient(180deg,#FDFBFE,#F9F2FC);cursor:pointer;transition:all .18s;min-height:150px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;
+}
+.drop-zone:hover,.drop-zone.dragover{background:#F2E9F8;border-color:var(--purple-dark)}
+.drop-zone .dz-icon{font-size:34px}
+.drop-zone .dz-title{font-weight:600;font-size:15px;color:var(--ink)}
+.drop-zone .dz-hint{font-size:12px;color:var(--ink-3)}
+.drop-zone.loaded{border-style:solid;border-color:#B7E0B9;background:#F4FBF4}
+.drop-zone .dz-file{font-size:12.5px;color:var(--purple-dark);font-weight:600;word-break:break-all}
+.drop-zone .dz-count{font-size:12px;color:var(--ink-3)}
+.optional-uploads{margin-top:14px;border:1px dashed var(--line);border-radius:12px;padding:0 14px}
+.optional-uploads summary{
+  cursor:pointer;padding:12px 2px;font-weight:600;color:var(--purple-dark);font-size:13.5px;list-style:none;
+}
+.optional-uploads summary::before{content:"➕  "; }
+.optional-uploads[open] summary::before{content:"➖  "}
+.mini-uploads{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding-bottom:14px}
+.mini-drop{
+  border:1.5px dashed var(--lilac);border-radius:10px;padding:12px;text-align:center;cursor:pointer;
+  font-size:12.5px;color:var(--ink-2);transition:all .15s;background:#FDFBFE;
+}
+.mini-drop:hover{border-color:var(--purple)}
+.mini-drop.loaded{border-style:solid;border-color:#B7E0B9;background:#F4FBF4;color:var(--purple-dark);font-weight:600}
+
+/* ---------- 设置栏 ---------- */
+.settings-bar{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.settings-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2)}
+/* 开关 */
+.switch{position:relative;width:44px;height:24px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{
+  position:absolute;inset:0;background:#D8CDE4;border-radius:24px;cursor:pointer;transition:.2s;
+}
+.switch .slider::before{
+  content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;
+  transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.switch input:checked + .slider{background:linear-gradient(120deg,#C4A8D4,#A98BC6)}
+.switch input:checked + .slider::before{transform:translateX(20px)}
+.tolerance-input{
+  width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;
+  font-size:13px;color:var(--ink);background:#FDFBFE;
+}
+.tolerance-input:focus{outline:2px solid var(--lilac);border-color:var(--purple)}
+.settings-note{font-size:11.5px;color:var(--ink-3);width:100%}
+
+/* ---------- KPI 行 ---------- */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.kpi-card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;
+  position:relative;overflow:hidden;
+}
+.kpi-card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--pink),var(--purple));
+}
+.kpi-label{font-size:12.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.kpi-value{font-size:22px;font-weight:700;margin-top:8px;letter-spacing:.3px;color:var(--ink)}
+.kpi-value.neg{color:var(--red)}
+.kpi-sub{font-size:11.5px;color:var(--ink-3);margin-top:6px}
+.progress-track{
+  height:10px;border-radius:10px;background:#F0E8F5;margin-top:10px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:10px;border-right:2px solid var(--card);
+  background:linear-gradient(90deg,#D9C2EA,#A98BC6);width:0;transition:width .6s ease;
+}
+
+/* ---------- 结果卡片 / Tabs ---------- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tab-btn{
+  background:none;border:none;padding:10px 16px;font-size:14px;font-family:inherit;color:var(--ink-2);
+  cursor:pointer;border-bottom:3px solid transparent;border-radius:8px 8px 0 0;transition:all .15s;
+}
+.tab-btn:hover{background:#F7F0FA}
+.tab-btn.active{color:var(--purple-dark);font-weight:600;border-bottom-color:var(--purple);background:#FBF7FE}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ---------- 表格 ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:12.8px;min-width:860px}
+thead th{
+  background:linear-gradient(180deg,#FBF7FE,#F6EEFA);color:var(--ink-2);font-weight:600;
+  padding:10px 12px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1;
+  border-bottom:1px solid var(--line);
+}
+tbody td{padding:9px 12px;border-bottom:1px solid #F7F1FA;color:var(--ink);white-space:nowrap;vertical-align:middle}
+tbody tr:hover{background:#FCF9FE}
+tbody tr:last-child td{border-bottom:none}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.empty-tip{text-align:center;padding:36px 0;color:var(--ink-3);font-size:13px}
+.empty-tip .big{font-size:30px;display:block;margin-bottom:8px}
+
+/* ---------- 状态徽章 ---------- */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
+  font-size:11.5px;font-weight:600;color:#fff;white-space:nowrap;
+}
+.badge.green{background:var(--green)}
+.badge.amber{background:var(--amber)}
+.badge.red{background:var(--red)}
+.badge.blue{background:var(--blue)}
+.badge.orange{background:var(--orange)}
+.badge.gray{background:var(--gray)}
+.badge-aging{background:#F0E8F5;color:var(--purple-dark);font-size:11px;border-radius:4px;padding:2px 7px}
+
+/* ---------- 经销商汇总条形图（单一色相序列化，数据条底部对齐） ---------- */
+.dealer-bar-wrap{display:flex;align-items:center;gap:10px}
+.dealer-bar-track{flex:1;height:12px;background:#F0E8F5;border-radius:6px;overflow:hidden;position:relative}
+.dealer-bar-fill{
+  height:100%;border-radius:6px 0 0 6px;min-width:2px;
+  background:linear-gradient(90deg,#D9C2EA,#A98BC6);
+  transition:width .5s ease;
+}
+.dealer-bar-total{width:88px;text-align:right;font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+/* ---------- 工具栏 ---------- */
+.toolbar{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:16px;
+  border-top:1px solid var(--line);
+}
+.toolbar select,.toolbar input[type=text]{
+  padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;
+  color:var(--ink);background:#FDFBFE;
+}
+.toolbar select:focus,.toolbar input[type=text]:focus{outline:2px solid var(--lilac)}
+.toolbar input[type=text]{width:220px}
+.toolbar .spacer{flex:1}
+.toolbar .tl-label{font-size:12.5px;color:var(--ink-3)}
+
+/* ---------- AI 面板 ---------- */
+.ai-card details summary{
+  cursor:pointer;font-size:15px;font-weight:700;color:var(--ink);list-style:none;
+  display:flex;align-items:center;gap:8px;padding:4px 0 12px;
+}
+.ai-card details summary::after{content:"▾";color:var(--purple);margin-left:auto;font-size:13px}
+.ai-card details[open] summary::after{content:"▴"}
+.ai-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-3);margin-bottom:12px}
+.ai-note{
+  margin-top:14px;font-size:12.5px;color:var(--ink-2);background:linear-gradient(120deg,#FBF4FD,#F6EEFA);
+  border:1px dashed var(--purple);border-radius:10px;padding:10px 14px;line-height:1.7;
+}
+.ai-item{
+  border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#FDFBFE;
+}
+.ai-item .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ai-item .from{font-size:13px;color:var(--ink)}
+.ai-item .arrow{color:var(--purple)}
+.ai-item .score{font-size:13px;font-weight:700;color:var(--purple-dark)}
+.ai-item .parts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.ai-chip{
+  font-size:11px;color:var(--ink-2);background:#F2E9F8;border-radius:6px;padding:3px 9px;
+  font-variant-numeric:tabular-nums;
+}
+.conf{display:inline-flex;align-items:center;padding:2px 10px;border-radius:14px;font-size:11.5px;font-weight:700;color:#fff}
+.conf.high{background:var(--green)} .conf.mid{background:var(--amber)} .conf.low{background:var(--gray)}
+
+/* ---------- 页脚 ---------- */
+.site-footer{
+  text-align:center;padding:22px 16px 30px;color:var(--ink-3);font-size:12px;line-height:1.9;
+}
+.site-footer a{color:var(--purple-dark);text-decoration:none}
+.site-footer a:hover{text-decoration:underline}
+
+/* ---------- Toast ---------- */
+#toastBox{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px}
+.toast{
+  background:#fff;border-radius:10px;box-shadow:0 6px 20px rgba(80,60,110,.18);padding:11px 16px;
+  font-size:13px;border-left:4px solid var(--purple);animation:slideIn .25s ease;
+}
+.toast.error{border-left-color:var(--red)}
+.toast.success{border-left-color:var(--green)}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:960px){
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .upload-grid,.mini-uploads{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .kpi-row{grid-template-columns:1fr}
+  .header-actions{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 头部 ============ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-badge">🐱</div>
+    <div>
+      <h1>BabyCat 回款智能对账台</h1>
+      <p>菲格洛亚 FIGUEROA · 经销商回款对账系统</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="btnSample">📁 载入示例数据</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ 上传区 ============ -->
+  <section class="card">
+    <div class="upload-grid">
+      <!-- 销售出库数据 -->
+      <div class="drop-zone" id="dropSales" title="点击或拖拽上传">
+        <div class="dz-icon">📦</div>
+        <div class="dz-title">销售出库数据</div>
+        <div class="dz-hint">sales_orders.csv · 点击选择或拖拽文件到此处</div>
+        <div class="dz-file" id="salesFile"></div>
+        <div class="dz-count" id="salesCount"></div>
+        <input type="file" accept=".csv,text/csv" hidden id="fileSales">
+      </div>
+      <!-- 银行回款数据 -->
+      <div class="drop-zone" id="dropBank" title="点击或拖拽上传">
+        <div class="dz-icon">🏦</div>
+        <div class="dz-title">银行回款数据</div>
+        <div class="dz-hint">bank_receipts.csv · 点击选择或拖拽文件到此处</div>
+        <div class="dz-file" id="bankFile"></div>
+        <div class="dz-count" id="bankCount"></div>
+        <input type="file" accept=".csv,text/csv" hidden id="fileBank">
+      </div>
+    </div>
+
+    <!-- 可选数据（折叠） -->
+    <details class="optional-uploads" id="optUploads">
+      <summary>可选数据上传（Sell-Through / 摩点众筹 / 版税规则）</summary>
+      <div class="mini-uploads">
+        <div class="mini-drop" id="dropST">📊 经销商 Sell-Through<br>dealer_sell_through.csv<span id="stFile"></span></div>
+        <input type="file" accept=".csv,text/csv" hidden id="fileST">
+        <div class="mini-drop" id="dropModian">🎯 摩点众筹结算<br>modian_settlements.csv<span id="modianFile"></span></div>
+        <input type="file" accept=".csv,text/csv" hidden id="fileModian">
+        <div class="mini-drop" id="dropArtist">🎨 艺术家版税规则<br>artist_list.csv<span id="artistFile"></span></div>
+        <input type="file" accept=".csv,text/csv" hidden id="fileArtist">
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ 对账设置栏 ============ -->
+  <section class="card settings-bar">
+    <div class="settings-item">
+      <label class="switch">
+        <input type="checkbox" id="fuzzyToggle" checked>
+        <span class="slider"></span>
+      </label>
+      <span>模糊名称匹配</span>
+    </div>
+    <div class="settings-item">
+      <span>金额容差</span>
+      <input type="number" id="toleranceInput" class="tolerance-input" step="0.01" min="0" value="0.01">
+      <span>¥</span>
+    </div>
+    <button class="btn btn-primary" id="btnRun">🚀 开始智能对账</button>
+    <div class="settings-note">
+      提示：示例数据中包含「抹零 ¥0.67 / 少付 ¥1.00」等场景，可将金额容差调至 ¥1.00 以识别微小差异；默认 ¥0.01 时这类回款将记为部分匹配并在 AI 建议中提示。
+    </div>
+  </section>
+
+  <!-- ============ KPI 指标行 ============ -->
+  <section class="kpi-row" id="kpiRow">
+    <div class="kpi-card"><div class="kpi-label">💰 总应收金额</div><div class="kpi-value" id="kpiAR">—</div><div class="kpi-sub" id="kpiARSub">尚未对账</div></div>
+    <div class="kpi-card"><div class="kpi-label">🏦 总回款金额</div><div class="kpi-value" id="kpiRecv">—</div><div class="kpi-sub" id="kpiRecvSub">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">⚖️ 净差异（应收 - 回款）</div><div class="kpi-value" id="kpiDiff">—</div><div class="kpi-sub" id="kpiDiffSub">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">📈 对账完成率</div><div class="kpi-value" id="kpiRate">—</div><div class="progress-track"><div class="progress-fill" id="kpiRateBar"></div></div></div>
+    <div class="kpi-card"><div class="kpi-label">⚠️ 差异笔数</div><div class="kpi-value" id="kpiDiffCount">—</div><div class="kpi-sub" id="kpiDiffCountSub">未回款 / 部分 / 预收 / 名称待核对</div></div>
+  </section>
+
+  <!-- ============ 结果区（Tabs） ============ -->
+  <section class="card">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabMatch">🔗 匹配明细</button>
+      <button class="tab-btn" data-tab="tabDiff">⚠️ 差异清单</button>
+      <button class="tab-btn" data-tab="tabDealer">📊 经销商汇总</button>
+      <button class="tab-btn" data-tab="tabCrowd">🎯 众筹结算</button>
+      <button class="tab-btn" data-tab="tabRoyalty">🎨 艺术家版税</button>
+    </div>
+
+    <!-- Tab 1 匹配明细 -->
+    <div class="tab-panel active" id="tabMatch">
+      <div class="table-wrap"><table id="matchTable"></table></div>
+    </div>
+    <!-- Tab 2 差异清单 -->
+    <div class="tab-panel" id="tabDiff">
+      <div class="table-wrap"><table id="diffTable"></table></div>
+    </div>
+    <!-- Tab 3 经销商汇总 -->
+    <div class="tab-panel" id="tabDealer">
+      <div id="dealerHint" style="font-size:12.5px;color:var(--ink-3);margin-bottom:10px"></div>
+      <div class="table-wrap"><table id="dealerTable"></table></div>
+    </div>
+    <!-- Tab 4 众筹结算 -->
+    <div class="tab-panel" id="tabCrowd">
+      <div id="crowdSummary" style="font-size:13px;color:var(--ink-2);margin-bottom:10px"></div>
+      <div class="table-wrap"><table id="crowdTable"></table></div>
+    </div>
+    <!-- Tab 5 艺术家版税 -->
+    <div class="tab-panel" id="tabRoyalty">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="font-size:13px;color:var(--ink-2)">版税销售额口径：实收金额</span>
+        <span style="font-size:13px;color:var(--ink-2)">默认版税率</span>
+        <input type="number" id="royaltyRate" class="tolerance-input" step="0.01" min="0" max="100" value="5" style="width:80px"> %
+        <button class="btn btn-ghost btn-small" id="btnRoyaltyApply">应用</button>
+        <span id="royaltyHint" style="font-size:11.5px;color:var(--ink-3)"></span>
+      </div>
+      <div class="table-wrap"><table id="royaltyTable"></table></div>
+    </div>
+
+    <!-- ============ 工具栏 ============ -->
+    <div class="toolbar">
+      <span class="tl-label">经销商</span>
+      <select id="dealerFilter"><option value="">全部经销商</option></select>
+      <span class="tl-label">搜索</span>
+      <input type="text" id="searchBox" placeholder="单号 / 名称 / 商品关键字…">
+      <div class="spacer"></div>
+      <button class="btn btn-ghost btn-small" id="btnExportMatch" title="导出当前全部匹配明细（不受筛选影响）">导出对账结果 CSV</button>
+      <button class="btn btn-ghost btn-small" id="btnExportDiff" title="导出当前全部差异清单（不受筛选影响）">导出差异 CSV</button>
+    </div>
+  </section>
+
+  <!-- ============ AI 对账建议面板 ============ -->
+  <section class="card ai-card">
+    <details open>
+      <summary>🤖 AI 对账建议</summary>
+      <div class="ai-legend">
+        <span>🧮 得分 = 金额相似度 ×50% + 日期接近度 ×30% + 名称相似度 ×20%</span>
+        <span><span class="conf high">高</span> ≥0.85</span>
+        <span><span class="conf mid">中</span> ≥0.65</span>
+        <span><span class="conf low">低</span> &lt;0.65</span>
+      </div>
+      <div id="aiList"></div>
+      <div class="ai-note">
+        💡 本引擎使用规则匹配。接入 Claude API 后可实现自然语言备注解析，自动识别「补6月名创差额」等语义，
+        将银行回款备注与销售单备注、历史差异自动关联，实现「备注即凭证」的智能核销。
+      </div>
+    </details>
+  </section>
+</main>
+
+<!-- ============ 页脚 ============ -->
+<footer class="site-footer">
+  Built with Claude Code · AI-Native Reconciliation Demo · FIGUEROA BabyCat © 2026<br>
+  <a href="https://github.com/3518835873/figlora-reconciliation" target="_blank" rel="noopener">github.com/3518835873/figlora-reconciliation</a>
+</footer>
+
+<div id="toastBox"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   BabyCat 回款智能对账台 · 对账引擎
+   流程：名称归一化 → 按经销商分组 → 单笔精确匹配 → 多单合并匹配
+        → FIFO 部分核销 → 跨经销商名称核对 → 剩余未匹配标记
+   ===================================================================== */
+
+/* ---------------- 全局状态 ---------------- */
+const state = {
+  salesOrders: [],     // 销售单（已解析+归一化）
+  receipts: [],        // 银行回款
+  sellThrough: [],     // 经销商 Sell-Through（可选）
+  modian: [],          // 摩点众筹结算（可选）
+  artistRules: [],     // 艺术家版税规则（可选）
+  matchRows: [],       // Tab1 匹配明细行
+  diffRows: [],        // Tab2 差异清单行
+  dealerSummary: [],   // Tab3 经销商汇总行
+  files: {},           // 文件名信息 {sales:{name,count},...}
+  ran: false
+};
+
+/* ---------------- 工具函数 ---------------- */
+
+/** 转数字：兼容千分位、¥、负号 */
+function toNum(v){
+  if (v === null || v === undefined) return 0;
+  const n = parseFloat(String(v).replace(/[¥￥,\s]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+/** 解析日期：支持 2026-06-24 / 2026/6/24 / 2026.6.24 / 2026年6月24日 */
+function toDate(v){
+  if (!v) return null;
+  const s = String(v).trim();
+  const m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return isNaN(d) ? null : d;
+}
+function fmtDate(d){ return d ? d.toISOString().slice(0,10) : '—'; }
+
+/** 金额格式化：¥1,234.56 */
+function fmt(v){
+  const n = toNum(v);
+  return (n < 0 ? '-¥' : '¥') + Math.abs(n).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+/** 整数格式化 */
+function fmtInt(v){ return Number(v||0).toLocaleString('zh-CN'); }
+
+/** HTML 转义 */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/** Toast 提示 */
+function toast(msg, type){
+  const box = document.getElementById('toastBox');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || '');
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => { el.style.opacity = 0; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }, 4200);
+}
+
+/* ---------------- CSV 解析（编码回退 + Papa 降级） ---------------- */
+
+/** 读取文件：UTF-8 优先，出现乱码替换符时回退 GBK */
+async function readFileText(file){
+  const buf = await file.arrayBuffer();
+  let text = new TextDecoder('utf-8').decode(buf);
+  if (text.includes('�')) {
+    try { const gbk = new TextDecoder('gbk').decode(buf); if (!gbk.includes('�')) text = gbk; } catch(e){ /* 保持 UTF-8 结果 */ }
+  }
+  return text.replace(/^﻿/, ''); // 去 BOM
+}
+
+/** 简易 CSV 解析器（Papa Parse 离线不可用时的降级，支持引号与换行） */
+function simpleParse(csv){
+  const rows = []; let row = [], cur = '', inQ = false;
+  for (let i = 0; i < csv.length; i++){
+    const c = csv[i];
+    if (inQ){
+      if (c === '"'){ if (csv[i+1] === '"'){ cur += '"'; i++; } else inQ = false; }
+      else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ','){ row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r'){
+      if (c === '\r' && csv[i+1] === '\n') i++;
+      row.push(cur); cur = '';
+      if (row.some(x => x.trim() !== '')) rows.push(row);
+      row = [];
+    } else cur += c;
+  }
+  row.push(cur);
+  if (row.some(x => x.trim() !== '')) rows.push(row);
+  if (!rows.length) return [];
+  const header = rows[0].map(h => String(h).trim());
+  return rows.slice(1).map(r => {
+    const o = {};
+    header.forEach((h, i) => o[h] = (r[i] ?? '').trim());
+    return o;
+  });
+}
+
+/** 解析 CSV 文本 → 对象数组（Papa 优先） */
+function parseCSV(text){
+  if (typeof Papa !== 'undefined'){
+    const res = Papa.parse(text, { header: true, skipEmptyLines: true });
+    if (res.errors && res.errors.length){
+      // 解析错误但仍有数据则继续，仅提示
+      console.warn('PapaParse 警告:', res.errors.slice(0,3));
+    }
+    return res.data || [];
+  }
+  return simpleParse(text);
+}
+
+/** 在对象中按候选列名查找（支持同义列） */
+function pick(row, ...candidates){
+  for (const c of candidates){
+    if (row && row[c] !== undefined && row[c] !== null && String(row[c]).trim() !== '') return row[c];
+  }
+  for (const k of Object.keys(row || {})){
+    for (const c of candidates){
+      if (k.includes(c) && String(row[k]).trim() !== '') return row[k];
+    }
+  }
+  return '';
+}
+
+/** 必填列校验 */
+function validateColumns(rows, required, fileLabel){
+  if (!rows || !rows.length) return '文件为空或无法解析';
+  const missing = required.filter(r => !Object.keys(rows[0]).some(k => k.includes(r)));
+  if (missing.length) return '「' + fileLabel + '」缺少必填列：' + missing.join('、');
+  return null;
+}
+
+/* ---------------- 名称归一化 ---------------- */
+/**
+ * 归一化规则：
+ * 1. 去除括号及内容：（广州）、（官方旗舰店）等
+ * 2. 去除公司后缀：有限公司/股份有限公司/贸易公司/有限责任公司…
+ * 3. 去除尾部残留（贸易/文化发展/投资/集团等）
+ * 4. 去除空白、统一小写
+ * 例：酷乐潮玩（北京）贸易公司 → 酷乐潮玩
+ */
+function normalizeName(name){
+  if (name === null || name === undefined) return '';
+  let s = String(name).trim();
+  s = s.replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '');
+  s = s.replace(/股份有限公司|有限责任公司|有限公司|贸易公司|商贸公司|经销公司|连锁公司/g, '');
+  s = s.replace(/(贸易|商贸|经销|连锁|文化发展|投资|实业|集团|中国)$/g, '');
+  s = s.replace(/[\s　·•.-]+/g, '');
+  return s.toLowerCase();
+}
+
+/** 字符 bigram 集合（用于相似度计算） */
+function bigrams(s){
+  const set = new Set();
+  const t = '##' + s + '##';
+  for (let i = 0; i < t.length - 1; i++) set.add(t.slice(i, i + 2));
+  return set;
+}
+/** Dice 相似度 0~1 */
+function strSim(a, b){
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const A = bigrams(a), B = bigrams(b);
+  let inter = 0;
+  for (const g of A) if (B.has(g)) inter++;
+  return (2 * inter) / (A.size + B.size);
+}
+
+/* ---------------- 文件加载 ---------------- */
+
+/** 文件类型定义：必填列 + 解析回调 */
+const FILE_TYPES = {
+  sales: {
+    label: '销售出库数据',
+    required: ['销售单号', '经销商名称', '实收金额'],
+    parse(rows){
+      return rows.map((r, i) => {
+        const amount = toNum(pick(r, '实收金额', '金额'));
+        const creditDays = parseInt(pick(r, '账期天数'), 10);
+        const orderDate = toDate(pick(r, '开单日期'));
+        let due = toDate(pick(r, '到期日'));
+        if (!due && orderDate && creditDays > 0) due = new Date(orderDate.getTime() + creditDays * 86400000);
+        return {
+          idx: i,
+          docNo: pick(r, '销售单号'),
+          date: orderDate,
+          dealerCode: pick(r, '经销商编码'),
+          dealerName: pick(r, '经销商名称'),
+          sku: pick(r, 'SKU编码'),
+          product: pick(r, '商品名称'),
+          qty: toNum(pick(r, '数量')),
+          unitPrice: toNum(pick(r, '单价')),
+          amount: amount,
+          discount: pick(r, '折扣率'),
+          actual: amount,                 // 实收金额 = 应收
+          creditDays: creditDays,
+          dueDate: due,
+          batchType: pick(r, '批次类型'),
+          remark: pick(r, '备注'),
+          norm: normalizeName(pick(r, '经销商名称')),
+          // 匹配状态字段
+          matched: 0,          // 已核销金额
+          remaining: amount,   // 未核销金额
+          allocs: [],          // 核销记录 [{no,date,amount,kind}]
+          merged: false,       // 是否经多单合并匹配
+          nameCheck: false     // 是否名称待核对
+        };
+      });
+    }
+  },
+  bank: {
+    label: '银行回款数据',
+    required: ['回款单号', '付款方名称', '金额'],
+    parse(rows){
+      return rows.map((r, i) => {
+        const amount = toNum(pick(r, '金额'));
+        return {
+          idx: i,
+          docNo: pick(r, '回款单号'),
+          date: toDate(pick(r, '到账日期')),
+          payer: pick(r, '付款方名称'),
+          amount: amount,
+          method: pick(r, '付款方式'),
+          bank: pick(r, '开户行'),
+          transNo: pick(r, '交易流水号'),
+          remark: pick(r, '备注'),
+          norm: normalizeName(pick(r, '付款方名称')),
+          // 匹配状态字段
+          matched: 0,
+          remaining: amount,
+          allocs: [],
+          status: null        // 'matched' | 'namecheck' | 'leftover'
+        };
+      });
+    }
+  },
+  sellthrough: {
+    label: '经销商 Sell-Through',
+    required: ['经销商编码', '销售数量', '销售金额'],
+    parse(rows){
+      return rows.map(r => ({
+        code: pick(r, '经销商编码'),
+        month: pick(r, '报表月份'),
+        sku: pick(r, 'SKU编码'),
+        product: pick(r, '商品名称'),
+        qty: toNum(pick(r, '销售数量')),
+        amount: toNum(pick(r, '销售金额')),
+        norm: normalizeName(pick(r, '经销商名称') || '')
+      }));
+    }
+  },
+  modian: {
+    label: '摩点众筹结算',
+    required: ['结算编号', '应结算金额'],
+    parse(rows){
+      return rows.map(r => ({
+        no: pick(r, '结算编号'),
+        applyDate: toDate(pick(r, '申请日期')),
+        stage: pick(r, '结算阶段'),
+        expected: toNum(pick(r, '应结算金额')),
+        arriveDate: toDate(pick(r, '到账日期')),
+        actual: toNum(pick(r, '实际到账') || pick(r, '应结算金额')),
+        status: pick(r, '状态'),
+        remark: pick(r, '备注')
+      }));
+    }
+  },
+  artist: {
+    label: '艺术家版税规则',
+    required: ['艺术家姓名', '分成比例'],
+    parse(rows){
+      return rows.map(r => ({
+        code: pick(r, '艺术家编码'),
+        name: pick(r, '艺术家姓名'),
+        skus: String(pick(r, '关联SKU') || '').split(/[,，、]/).map(s => s.trim().toLowerCase()).filter(Boolean),
+        rate: toNum(String(pick(r, '分成比例')).replace('%', '')) / 100,
+        settle: pick(r, '结算方式')
+      }));
+    }
+  }
+};
+
+/** 加载 CSV 文件（type: sales|bank|sellthrough|modian|artist） */
+async function loadCSVFile(file, type){
+  const def = FILE_TYPES[type];
+  try {
+    const text = await readFileText(file);
+    let rows;
+    try {
+      rows = parseCSV(text);
+    } catch (e) {
+      // 若 Papa 解析失败（如 BOM 干扰），降级内置解析器
+      rows = simpleParse(text);
+    }
+    const err = validateColumns(rows, def.required, def.label);
+    if (err) { toast(err, 'error'); return false; }
+    // type → state 字段名映射（注意 camelCase）
+    const STATE_KEY = { sales: 'salesOrders', bank: 'receipts', sellthrough: 'sellThrough', modian: 'modian', artist: 'artistRules' };
+    state[STATE_KEY[type]] = def.parse(rows);
+    const count = rows.length;
+    updateFileBadge(type, file.name, count);
+    state.files[type] = { name: file.name, count };
+    toast('✅ ' + def.label + '已载入：' + count + ' 行', 'success');
+    return true;
+  } catch (e) {
+    console.error(e);
+    toast('❌ 读取 ' + def.label + ' 失败：' + (e.message || e), 'error');
+    return false;
+  }
+}
+
+/** 更新上传卡片上的文件名与行数 */
+function updateFileBadge(type, name, count){
+  const map = {
+    sales: ['salesFile', 'salesCount'],
+    bank: ['bankFile', 'bankCount'],
+    sellthrough: ['stFile'],
+    modian: ['modianFile'],
+    artist: ['artistFile']
+  };
+  const [fid, cid] = map[type];
+  if (fid) document.getElementById(fid).textContent = ' · ' + name;
+  if (cid) document.getElementById(cid).textContent = '共 ' + count + ' 行';
+  const zone = document.getElementById('drop' + (type === 'sales' ? 'Sales' : type === 'bank' ? 'Bank' : type === 'sellthrough' ? 'ST' : type === 'modian' ? 'Modian' : 'Artist'));
+  if (zone) zone.classList.add('loaded');
+}
+
+/* ---------------- 上传交互（拖拽 + 点击） ---------------- */
+function bindDropZone(zoneId, inputId, type){
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { if (input.files[0]) loadCSVFile(input.files[0], type); });
+  ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('dragover'); }));
+  ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('dragover'); }));
+  zone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) loadCSVFile(f, type);
+  });
+}
+bindDropZone('dropSales', 'fileSales', 'sales');
+bindDropZone('dropBank', 'fileBank', 'bank');
+bindDropZone('dropST', 'fileST', 'sellthrough');
+bindDropZone('dropModian', 'fileModian', 'modian');
+bindDropZone('dropArtist', 'fileArtist', 'artist');
+
+/* 载入示例数据（相对本文件 data/，兼容 file:// 与 GitHub Pages） */
+document.getElementById('btnSample').addEventListener('click', async () => {
+  const files = [
+    ['sales_orders.csv', 'sales'],
+    ['bank_receipts.csv', 'bank'],
+    ['dealer_sell_through.csv', 'sellthrough'],
+    ['modian_settlements.csv', 'modian'],
+    ['artist_list.csv', 'artist']
+  ];
+  let ok = 0;
+  for (const [name, type] of files){
+    try {
+      const resp = await fetch('data/' + name);
+      if (!resp.ok) continue;
+      const buf = await resp.arrayBuffer();
+      const file = new File([buf], name, { type: 'text/csv' });
+      if (await loadCSVFile(file, type)) ok++;
+    } catch (e) { /* 单个失败不影响整体 */ }
+  }
+  if (ok >= 2) toast('示例数据已载入，点击「开始智能对账」', 'success');
+  else if (ok > 0) toast('部分示例数据载入（' + ok + '/5），可手动上传缺失文件');
+  else toast('未找到 data/ 下的示例数据，请手动上传 CSV 文件', 'error');
+});
+
+/* =====================================================================
+   对账引擎
+   ===================================================================== */
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
+const DAY = 86400000;
+
+/** 逾期天数（正数=已逾期，负数=未到期） */
+function overdueDays(o){
+  if (!o.dueDate) return null;
+  return Math.round((TODAY - o.dueDate) / DAY);
+}
+/** 账期分段：0-30 / 31-60 / 61-90 / 90+ */
+function agingBucket(days){
+  if (days === null) return { label: '无到期日', cls: '' };
+  if (days <= 0) return { label: '未到期', cls: 'green' };
+  if (days <= 30) return { label: '逾期0-30天', cls: 'amber' };
+  if (days <= 60) return { label: '逾期31-60天', cls: 'orange' };
+  if (days <= 90) return { label: '逾期61-90天', cls: 'red' };
+  return { label: '逾期90天+', cls: 'red' };
+}
+
+/** 判断销售单是否为退货/冲销 */
+function isReturn(o){
+  const t = (o.batchType || '') + (o.remark || '');
+  return /退货|冲销/.test(t) || o.amount < 0;
+}
+
+/** 判断回款是否为预付款/订金（备注含关键词 → 不参与自动核销，记为预收） */
+function isPrepay(r){
+  return /预付|订金|定金|保证金|押金/.test(r.remark || '');
+}
+
+/** 检查金额是否在容差内相等 */
+function near(a, b, tol){ return Math.abs(a - b) <= tol + 1e-9; }
+
+/**
+ * 核心对账引擎
+ * 1. 按归一化名称分组（模糊模式：相近名称合并分组）
+ * 2. 组内：单笔精确 → 两单合并 → 三单合并 → FIFO 部分核销
+ * 3. 跨组：金额精确匹配但名称不一致 → 「名称待核对」
+ * 4. 剩余：未匹配回款 → 「预收/多收」；未回款订单 → 「未回款」
+ */
+function runReconciliation(){
+  if (!state.salesOrders.length){
+    toast('请先上传「销售出库数据」', 'error');
+    return;
+  }
+  if (!state.receipts.length){
+    toast('未上传「银行回款数据」，全部订单将标记为未回款', 'error');
+  }
+
+  const tol = Math.max(0, toNum(document.getElementById('toleranceInput').value));
+  const fuzzy = document.getElementById('fuzzyToggle').checked;
+
+  // ---- 1. 归一化分组 ----
+  const orderGroups = new Map();   // norm -> [orders]
+  const recGroups = new Map();     // norm -> [receipts]
+  for (const o of state.salesOrders){
+    o.matched = 0; o.remaining = o.actual; o.allocs = []; o.merged = false; o.nameCheck = false;
+    if (!orderGroups.has(o.norm)) orderGroups.set(o.norm, []);
+    orderGroups.get(o.norm).push(o);
+  }
+  for (const r of state.receipts){
+    r.matched = 0; r.remaining = r.amount; r.allocs = []; r.status = null;
+    if (!recGroups.has(r.norm)) recGroups.set(r.norm, []);
+    recGroups.get(r.norm).push(r);
+  }
+  // 模糊模式：将未精确命中的回款归入相似度 >= 0.6 的经销商分组
+  if (fuzzy){
+    const norms = [...orderGroups.keys()];
+    for (const r of state.receipts){
+      if (orderGroups.has(r.norm)) continue;
+      let best = '', bestSim = 0;
+      for (const n of norms){
+        const s = strSim(r.norm, n);
+        if (s > bestSim){ bestSim = s; best = n; }
+      }
+      if (bestSim >= 0.6) recGroups.get(best).push(r);
+    }
+  }
+
+  // ---- 2. 组内匹配 ----
+  for (const [norm, orders] of orderGroups){
+    const recs = recGroups.get(norm) || [];
+    matchDealerGroup(orders, recs, tol);
+  }
+
+  // ---- 3. 跨组「名称待核对」：金额精确匹配、名称不一致 ----
+  if (fuzzy){
+    for (const r of state.receipts){
+      if (r.status || r.remaining <= tol) continue;
+      const o = state.salesOrders.find(o => !isReturn(o) && o.remaining > tol && near(o.remaining, r.remaining, tol));
+      if (o){
+        o.nameCheck = true;
+        allocate(o, r, o.remaining, 'namecheck');
+      }
+    }
+  }
+
+  // ---- 4. 剩余标记 ----
+  for (const r of state.receipts){
+    if (!r.status && r.remaining > tol) r.status = 'leftover';
+  }
+
+  // ---- 5. 生成结果行 / KPI / 汇总 / AI 建议 ----
+  buildMatchRows();
+  buildDiffRows();
+  buildDealerSummary();
+  buildKPIs(tol);
+  buildAISuggestions(tol, fuzzy);
+  renderAll();
+  state.ran = true;
+  toast('✅ 对账完成：' + state.matchRows.length + ' 笔订单明细，' + state.diffRows.length + ' 条差异', 'success');
+}
+
+/** 组内匹配：精确 → 合并 → FIFO */
+function matchDealerGroup(orders, recs, tol){
+  for (const o of orders){
+    o.remaining = o.actual; o.matched = 0; o.allocs = []; o.merged = false; o.nameCheck = false;
+  }
+  for (const r of recs){
+    r.remaining = r.amount; r.matched = 0; r.allocs = []; r.status = null;
+  }
+  // 未核销订单（按开单日期升序，便于 FIFO）
+  const unpaid = () => orders.filter(o => !isReturn(o) && o.remaining > tol)
+                            .sort((a, b) => (a.date || 0) - (b.date || 0));
+
+  for (const r of recs){
+    if (r.remaining <= tol) continue;
+    // 备注含「预付/订金/定金/保证金」→ 直接记为预收，不参与自动核销
+    if (isPrepay(r)){ r.status = 'leftover'; continue; }
+
+    // (a0) 备注引用单笔销售单号 → 优先核销该单（抹零/少付场景按此定位）
+    // 多条引用（如合并回款「SO-x/SO-y/SO-z」）不触发，交给合并匹配处理
+    const refs = String(r.remark || '').match(/SO-\d{8}-\d{3}/g) || [];
+    if (refs.length === 1){
+      const refOrder = orders.find(x => x.docNo === refs[0] && !isReturn(x) && x.remaining > tol);
+      if (refOrder){
+        if (near(refOrder.remaining, r.remaining, tol)){
+          // 容差内视为全额核销（抹零写销）
+          allocate(refOrder, r, refOrder.remaining, 'exact');
+          r.remaining = 0; continue;
+        }
+        // 金额不一致（抹零/少付/多付）：先部分核销该单，剩余再走通用流程
+        const take = Math.min(refOrder.remaining, r.remaining);
+        allocate(refOrder, r, take, 'partial');
+      }
+    }
+
+    // (a) 单笔精确匹配（容差内按订单全额核销，差额视为抹零）
+    let hit = false;
+    for (const o of unpaid()){
+      if (near(o.remaining, r.remaining, tol)){
+        allocate(o, r, o.remaining, 'exact');
+        r.remaining = 0; hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+
+    // (b) 两单合并匹配
+    const list = unpaid().filter(o => o.remaining <= r.remaining + tol);
+    outer:
+    for (let i = 0; i < list.length; i++){
+      for (let j = i + 1; j < list.length; j++){
+        const s = list[i].remaining + list[j].remaining;
+        if (near(s, r.remaining, tol)){
+          allocate(list[i], r, list[i].remaining, 'merge');
+          allocate(list[j], r, list[j].remaining, 'merge');
+          list[i].merged = list[j].merged = true;
+          r.remaining = 0; hit = true;
+          break outer;
+        }
+      }
+    }
+    if (hit) continue;
+
+    // (c) 三单合并匹配（仅取金额最小的前 40 个候选，控制组合规模）
+    const cand = list.slice(0, 40);
+    outer3:
+    for (let i = 0; i < cand.length; i++){
+      for (let j = i + 1; j < cand.length; j++){
+        for (let k = j + 1; k < cand.length; k++){
+          const s = cand[i].remaining + cand[j].remaining + cand[k].remaining;
+          if (near(s, r.remaining, tol)){
+            allocate(cand[i], r, cand[i].remaining, 'merge');
+            allocate(cand[j], r, cand[j].remaining, 'merge');
+            allocate(cand[k], r, cand[k].remaining, 'merge');
+            cand[i].merged = cand[j].merged = cand[k].merged = true;
+            r.remaining = 0; hit = true;
+            break outer3;
+          }
+        }
+      }
+    }
+    if (hit) continue;
+
+    // (d) FIFO 部分核销：剩余回款按开单日期从旧到新逐单抵扣
+    // 注意：allocate() 内部已同步更新双方 remaining/matched，此处不得再手动扣减
+    if (r.remaining > tol){
+      for (const o of unpaid()){
+        if (r.remaining <= tol) break;
+        const take = Math.min(o.remaining, r.remaining);
+        allocate(o, r, take, 'partial');
+      }
+    }
+  }
+}
+
+/**
+ * 核销记录：订单与回款双侧登记。
+ * 容差内精确匹配时按「订单全额」核销（差额视为抹零/写销），
+ * 因此 remaining 可能被扣成极小负值，此处钳制为 0。
+ */
+function allocate(o, r, amount, kind){
+  o.allocs.push({ no: r.docNo, date: r.date, amount: round2(amount), kind });
+  r.allocs.push({ no: o.docNo, date: o.date, amount: round2(amount), kind });
+  o.matched = round2(o.matched + amount);
+  o.remaining = Math.max(0, round2(o.remaining - amount));
+  r.matched = round2(r.matched + amount);
+  r.remaining = Math.max(0, round2(r.remaining - amount));
+  if (kind === 'exact' || kind === 'merge' || kind === 'namecheck') r.status = 'matched';
+}
+function round2(v){ return Math.round(v * 100) / 100; }
+
+/** 订单最终状态 */
+function orderStatus(o){
+  if (isReturn(o)) return { text: '退货/冲销', cls: 'gray' };
+  if (o.nameCheck) return { text: '名称待核对', cls: 'orange' };
+  if (o.matched <= 1e-6) return { text: '未回款', cls: 'red' };
+  if (o.remaining <= 1e-6) return { text: o.merged ? '合并回款-完全匹配' : '完全匹配', cls: 'green' };
+  return { text: '部分匹配', cls: 'amber' };
+}
+
+/* ---------------- 结果行构建 ---------------- */
+
+/** Tab1 匹配明细：每个销售单一行，回款多笔则合并展示 */
+function buildMatchRows(){
+  state.matchRows = [];
+  for (const o of state.salesOrders){
+    const st = orderStatus(o);
+    const recNos = o.allocs.map(a => a.no).join('、');
+    const recAmt = round2(o.allocs.reduce((s, a) => s + a.amount, 0));
+    const lastRecDate = o.allocs.length ? o.allocs[o.allocs.length - 1].date : null;
+    state.matchRows.push({
+      dealer: o.dealerName,
+      norm: o.norm,
+      docNo: o.docNo,
+      date: o.date,
+      product: o.product,
+      sku: o.sku,
+      amount: o.actual,
+      matchedAmt: recAmt,
+      recNos, recAmt, lastRecDate,
+      status: st.text,
+      statusCls: st.cls,
+      dueDate: o.dueDate,
+      remark: o.remark,
+      searchable: [o.docNo, o.dealerName, o.product, o.sku, recNos].join(' '),
+      isReturn: isReturn(o)
+    });
+  }
+}
+
+/** Tab2 差异清单：未回款 / 部分 / 预收多收 / 名称待核对 / 退货冲销 */
+function buildDiffRows(){
+  state.diffRows = [];
+  for (const o of state.salesOrders){
+    if (isReturn(o)){
+      state.diffRows.push({ type: '退货/冲销', cls: 'gray', dealer: o.dealerName, no: o.docNo, date: o.date,
+        amt: -o.actual, diff: o.actual, due: o.dueDate, note: '退货冲销单，不计入应收', searchable: o.docNo + ' ' + o.dealerName });
+      continue;
+    }
+    const od = overdueDays(o);
+    const bucket = agingBucket(od);
+    // 名称待核对：即使金额已全额核销也必须在差异清单中提示人工核对
+    if (o.nameCheck || o.remaining > 1e-6){
+      const st = orderStatus(o);
+      state.diffRows.push({ type: st.text, cls: st.cls, dealer: o.dealerName, no: o.docNo, date: o.date,
+        amt: o.actual, diff: o.remaining, due: o.dueDate, aging: od, bucketLabel: bucket.label, bucketCls: bucket.cls,
+        note: o.nameCheck ? '回款方名称与经销商不一致（金额已核销），建议人工核对后确认' : '', searchable: o.docNo + ' ' + o.dealerName });
+    }
+  }
+  for (const r of state.receipts){
+    if (r.remaining > 1e-6){
+      state.diffRows.push({ type: '预收/多收', cls: 'blue', dealer: r.payer, no: r.docNo, date: r.date,
+        amt: r.amount, diff: r.remaining, due: null, aging: null, bucketLabel: '—', bucketCls: '',
+        note: r.allocs.length ? '已部分核销，多余金额待后续订单' : '无对应销售订单，可能为预付款或平台结算差额', searchable: r.docNo + ' ' + r.payer });
+    }
+  }
+  // 名称待核对订单（已在上述循环内作为订单差异列出，此处补充说明）
+  state.diffRows.sort((a, b) => (a.date || 0) - (b.date || 0));
+}
+
+/** Tab3 经销商汇总 */
+function buildDealerSummary(){
+  const map = new Map();
+  for (const o of state.salesOrders){
+    if (isReturn(o)) continue;
+    if (!map.has(o.dealerName)) map.set(o.dealerName, { dealer: o.dealerName, ar: 0, recv: 0, orders: 0, matched: 0, partial: 0, open: 0, norm: o.norm });
+    const d = map.get(o.dealerName);
+    d.ar = round2(d.ar + o.actual);
+    d.recv = round2(d.recv + Math.min(o.matched, o.actual));
+    d.orders++;
+    const st = orderStatus(o);
+    if (st.cls === 'green') d.matched++;
+    else if (st.cls === 'amber') d.partial++;
+    else if (st.cls === 'red') d.open++;
+  }
+  state.dealerSummary = [...map.values()];
+  // 附加上 Sell-Through 数据（可选，按 经销商编码 → 名称 关联）
+  const codeName = new Map();
+  for (const o of state.salesOrders) codeName.set(o.dealerCode, o.dealerName);
+  const codeST = new Map();
+  for (const s of state.sellThrough){
+    const name = codeName.get(s.code) || s.norm;
+    if (!codeST.has(name)) codeST.set(name, { qty: 0, amount: 0 });
+    const d = codeST.get(name);
+    d.qty += s.qty; d.amount += s.amount;
+  }
+  for (const d of state.dealerSummary){
+    const st = codeST.get(d.dealer);
+    d.stQty = st ? st.qty : null;
+    d.stAmount = st ? st.amount : null;
+  }
+  state.dealerSummary.sort((a, b) => b.ar - a.ar);
+}
+
+/* ---------------- KPI ---------------- */
+function buildKPIs(tol){
+  const totalAR = round2(state.salesOrders.filter(o => !isReturn(o)).reduce((s, o) => s + o.actual, 0));
+  const totalRecv = round2(state.receipts.reduce((s, r) => s + r.amount, 0));
+  const matchedAR = round2(state.salesOrders.filter(o => !isReturn(o)).reduce((s, o) => s + Math.min(o.matched, o.actual), 0));
+  const netDiff = round2(totalAR - totalRecv);
+  const rate = totalAR > 0 ? matchedAR / totalAR * 100 : 0;
+  const diffCount = state.diffRows.length;
+  const recvMatched = round2(state.receipts.reduce((s, r) => s + r.matched, 0));
+  const openAmt = round2(totalAR - matchedAR);
+  // 预收/多收 = 回款侧未核销余额（容差抹零已钳制为 0，不会出现负数）
+  const leftoverAmt = round2(state.receipts.reduce((s, r) => s + r.remaining, 0));
+
+  document.getElementById('kpiAR').textContent = fmt(totalAR);
+  document.getElementById('kpiARSub').textContent = state.salesOrders.filter(o => !isReturn(o)).length + ' 笔销售订单（不含退货冲销）';
+  document.getElementById('kpiRecv').textContent = fmt(totalRecv);
+  document.getElementById('kpiRecvSub').textContent = state.receipts.length + ' 笔银行回款';
+  const diffEl = document.getElementById('kpiDiff');
+  diffEl.textContent = fmt(netDiff);
+  diffEl.className = 'kpi-value' + (netDiff < 0 ? ' neg' : '');
+  document.getElementById('kpiDiffSub').textContent = '已核销 ' + fmt(recvMatched) + ' / 未回款 ' + fmt(openAmt) + ' / 预收多收 ' + fmt(leftoverAmt);
+  document.getElementById('kpiRate').textContent = rate.toFixed(1) + '%';
+  document.getElementById('kpiRateBar').style.width = Math.min(100, rate) + '%';
+  document.getElementById('kpiDiffCount').textContent = diffCount;
+  document.getElementById('kpiDiffCountSub').textContent = '未回款 ' + countBy(state.diffRows, '未回款') + ' · 部分 ' + countBy(state.diffRows, '部分匹配') +
+    ' · 预收多收 ' + countBy(state.diffRows, '预收/多收') + ' · 名称待核对 ' + countBy(state.diffRows, '名称待核对') +
+    ' · 退货冲销 ' + countBy(state.diffRows, '退货/冲销');
+}
+function countBy(rows, t){ return rows.filter(r => r.type === t).length; }
+
+/* ---------------- AI 建议 ---------------- */
+/**
+ * 对未匹配/部分匹配订单与剩余回款进行打分匹配：
+ * score = 0.5*金额相似 + 0.3*日期接近 + 0.2*名称相似
+ */
+function buildAISuggestions(tol, fuzzy){
+  const sugg = [];
+  const openOrders = state.salesOrders.filter(o => !isReturn(o) && !o.nameCheck && o.remaining > 1e-6);
+  const leftoverRecs = state.receipts.filter(r => r.remaining > 1e-6);
+
+  // 1. 未回款订单 ← 剩余回款候选
+  for (const o of openOrders){
+    const cands = [];
+    for (const r of leftoverRecs){
+      const amountSim = 1 - Math.abs(o.remaining - r.remaining) / Math.max(o.remaining, r.remaining, 0.01);
+      let dateSim = 0.5;
+      if (o.date && r.date) dateSim = Math.max(0, 1 - Math.abs(o.date - r.date) / (90 * DAY));
+      const nameSim = strSim(o.norm, r.norm);
+      const score = round2(0.5 * amountSim + 0.3 * dateSim + 0.2 * nameSim);
+      if (score >= 0.35) cands.push({ r, score, amountSim: round2(amountSim), dateSim: round2(dateSim), nameSim: round2(nameSim) });
+    }
+    cands.sort((a, b) => b.score - a.score);
+    if (cands.length) sugg.push({ kind: 'order', o, cands: cands.slice(0, 3) });
+  }
+
+  // 2. 预收/多收回款 → 未结订单候选
+  for (const r of leftoverRecs){
+    const cands = [];
+    for (const o of openOrders){
+      const amountSim = 1 - Math.abs(o.remaining - r.remaining) / Math.max(o.remaining, r.remaining, 0.01);
+      let dateSim = 0.5;
+      if (o.date && r.date) dateSim = Math.max(0, 1 - Math.abs(o.date - r.date) / (90 * DAY));
+      const nameSim = strSim(o.norm, r.norm);
+      const score = round2(0.5 * amountSim + 0.3 * dateSim + 0.2 * nameSim);
+      if (score >= 0.35) cands.push({ o, score, amountSim: round2(amountSim), dateSim: round2(dateSim), nameSim: round2(nameSim) });
+    }
+    cands.sort((a, b) => b.score - a.score);
+    if (cands.length) sugg.push({ kind: 'receipt', r, cands: cands.slice(0, 3) });
+  }
+
+  // 3. 微小差额提示（抹零/少付，可调容差解决）
+  for (const o of openOrders){
+    if (o.matched > 1e-6 && o.remaining <= 5){
+      sugg.push({ kind: 'tip', o, tip: '订单 ' + o.docNo + ' 仅差 ' + fmt(o.remaining) + '，建议将金额容差调至 ¥' + Math.max(1, Math.ceil(o.remaining)) + '.00 后重新对账' });
+    }
+  }
+
+  sugg.sort((a, b) => {
+    const s = x => x.cands ? x.cands[0].score : 0;
+    return s(b) - s(a);
+  });
+  state.aiSuggestions = sugg.slice(0, 20);
+}
+
+/* =====================================================================
+   渲染
+   ===================================================================== */
+const BADGE = { green: 'green', amber: 'amber', red: 'red', blue: 'blue', orange: 'orange', gray: 'gray' };
+
+function statusBadge(text, cls){ return '<span class="badge ' + BADGE[cls] + '">' + esc(text) + '</span>'; }
+
+/** 当前筛选条件 */
+function currentFilters(){
+  return {
+    dealer: document.getElementById('dealerFilter').value,
+    query: document.getElementById('searchBox').value.trim().toLowerCase()
+  };
+}
+function applyFilter(rows, f){
+  return rows.filter(r => {
+    if (f.dealer && r.dealer !== f.dealer && r.norm !== normalizeName(f.dealer)) return false;
+    if (f.query && !r.searchable.toLowerCase().includes(f.query)) return false;
+    return true;
+  });
+}
+
+/** 统一渲染入口 */
+function renderAll(){
+  renderTabMatch();
+  renderTabDiff();
+  renderTabDealer();
+  renderTabCrowd();
+  renderTabRoyalty();
+  renderAI();
+  populateDealerFilter();
+}
+
+/* ---- Tab1 匹配明细 ---- */
+function renderTabMatch(){
+  const f = currentFilters();
+  const rows = applyFilter(state.matchRows, f);
+  const t = document.getElementById('matchTable');
+  if (!state.ran && !state.salesOrders.length){
+    t.innerHTML = '<tbody><tr><td colspan="10"><div class="empty-tip"><span class="big">📦</span>上传销售与回款数据后点击「开始智能对账」</div></td></tr></tbody>';
+    return;
+  }
+  let html = '<thead><tr><th>销售单号</th><th>开单日期</th><th>经销商</th><th>商品</th><th>应收金额</th><th>回款单号</th><th>到账日期</th><th>回款金额</th><th>匹配状态</th><th>账期/到期日</th></tr></thead><tbody>';
+  if (!rows.length){
+    html += '<tr><td colspan="10"><div class="empty-tip"><span class="big">🔍</span>无匹配记录（可调整筛选条件）</div></td></tr>';
+  }
+  for (const r of rows){
+    const aging = agingBucket(overdueDays(r));
+    html += '<tr>' +
+      '<td>' + esc(r.docNo) + '</td>' +
+      '<td>' + fmtDate(r.date) + '</td>' +
+      '<td>' + esc(r.dealer) + '</td>' +
+      '<td>' + esc(r.product) + '</td>' +
+      '<td class="num">' + fmt(r.amount) + '</td>' +
+      '<td>' + (r.recNos ? esc(r.recNos) : '—') + '</td>' +
+      '<td>' + (r.lastRecDate ? fmtDate(r.lastRecDate) : '—') + '</td>' +
+      '<td class="num">' + (r.recAmt ? fmt(r.recAmt) : '—') + '</td>' +
+      '<td>' + statusBadge(r.status, r.statusCls) + '</td>' +
+      '<td>' + (r.dueDate ? fmtDate(r.dueDate) : '—') + ' ' + (r.statusCls === 'red' || r.statusCls === 'amber' ? '<span class="badge-aging">' + esc(aging.label) + '</span>' : '') + '</td>' +
+      '</tr>';
+  }
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+/* ---- Tab2 差异清单 ---- */
+function renderTabDiff(){
+  const f = currentFilters();
+  const rows = applyFilter(state.diffRows, f);
+  const t = document.getElementById('diffTable');
+  if (!state.ran && !state.salesOrders.length){
+    t.innerHTML = '<tbody><tr><td colspan="8"><div class="empty-tip"><span class="big">⚠️</span>对账后展示未回款 / 部分回款 / 预收多收等差异项</div></td></tr></tbody>';
+    return;
+  }
+  let html = '<thead><tr><th>差异类型</th><th>经销商/付款方</th><th>单号</th><th>业务日期</th><th>涉及金额</th><th>差额</th><th>账期</th><th>说明</th></tr></thead><tbody>';
+  if (!rows.length){
+    html += '<tr><td colspan="8"><div class="empty-tip"><span class="big">🎉</span>无差异，全部核销一致！</div></td></tr>';
+  }
+  for (const r of rows){
+    html += '<tr>' +
+      '<td>' + statusBadge(r.type, r.cls) + '</td>' +
+      '<td>' + esc(r.dealer) + '</td>' +
+      '<td>' + esc(r.no) + '</td>' +
+      '<td>' + fmtDate(r.date) + '</td>' +
+      '<td class="num">' + fmt(r.amt) + '</td>' +
+      '<td class="num">' + fmt(r.diff) + '</td>' +
+      '<td>' + (r.aging !== null && r.aging !== undefined && r.bucketCls ? '<span class="badge-aging">' + esc(r.bucketLabel) + '</span>' : (r.bucketLabel || '—')) + '</td>' +
+      '<td style="white-space:normal;min-width:180px;color:var(--ink-2)">' + esc(r.note || '') + '</td>' +
+      '</tr>';
+  }
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+/* ---- Tab3 经销商汇总（内联条形图：单一紫色相，数据条底部对齐，带悬浮提示） ---- */
+function renderTabDealer(){
+  const t = document.getElementById('dealerTable');
+  const hint = document.getElementById('dealerHint');
+  if (!state.ran && !state.salesOrders.length){
+    t.innerHTML = '<tbody><tr><td colspan="8"><div class="empty-tip"><span class="big">📊</span>对账后展示各经销商应收 vs 回款</div></td></tr></tbody>';
+    hint.textContent = '';
+    return;
+  }
+  hint.textContent = state.sellThrough.length
+    ? '已上传 Sell-Through：' + state.sellThrough.length + ' 行 · 末尾列为报告期经销商动销数据（可选口径）'
+    : '未上传 Sell-Through 数据（可选），汇总基于销售订单直配回款';
+  if (!state.dealerSummary.length){
+    t.innerHTML = '<tbody><tr><td colspan="8"><div class="empty-tip"><span class="big">📊</span>暂无经销商汇总（可能全部为退货冲销单）</div></td></tr></tbody>';
+    return;
+  }
+  const max = Math.max(...state.dealerSummary.map(d => d.ar), 1);
+  const maxSt = Math.max(...state.dealerSummary.map(d => d.stAmount || 0), 1);
+  let html = '<thead><tr><th>经销商</th><th>订单数</th><th>应收金额</th><th>已回款</th><th>回款进度</th><th>差额</th><th>状态分布</th>' +
+    (state.sellThrough.length ? '<th>报告期销售(件)</th><th>报告期销售金额</th>' : '') + '</tr></thead><tbody>';
+  for (const d of state.dealerSummary){
+    const pct = d.ar > 0 ? (d.recv / d.ar * 100) : 0;
+    const barW = (d.ar / max * 100).toFixed(1);
+    html += '<tr>' +
+      '<td><strong>' + esc(d.dealer) + '</strong></td>' +
+      '<td class="num">' + d.orders + '</td>' +
+      '<td class="num">' + fmt(d.ar) + '</td>' +
+      '<td class="num">' + fmt(d.recv) + '</td>' +
+      '<td style="min-width:200px"><div class="dealer-bar-wrap">' +
+        '<div class="dealer-bar-track" title="' + esc(d.dealer) + '：已回款 ' + fmt(d.recv) + ' / 应收 ' + fmt(d.ar) + '（' + pct.toFixed(1) + '%）">' +
+          '<div class="dealer-bar-fill" style="width:' + barW + '%"></div>' +
+        '</div>' +
+        '<span class="dealer-bar-total">' + pct.toFixed(1) + '%</span>' +
+      '</div></td>' +
+      '<td class="num" style="color:' + (d.ar - d.recv > 1e-6 ? 'var(--red)' : 'var(--green)') + '">' + fmt(d.ar - d.recv) + '</td>' +
+      '<td>' + [d.matched ? statusBadge('完全 ' + d.matched, 'green') : '', d.partial ? statusBadge('部分 ' + d.partial, 'amber') : '', d.open ? statusBadge('未回 ' + d.open, 'red') : ''].filter(Boolean).join(' ') + '</td>' +
+      (state.sellThrough.length ? '<td class="num">' + fmtInt(d.stQty || 0) + '</td><td class="num">' + fmt(d.stAmount || 0) + '</td>' : '') +
+      '</tr>';
+  }
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+/* ---- Tab4 众筹结算（需上传 modian_settlements.csv） ---- */
+function renderTabCrowd(){
+  const t = document.getElementById('crowdTable');
+  const s = document.getElementById('crowdSummary');
+  if (!state.modian.length){
+    t.innerHTML = '<tbody><tr><td colspan="7"><div class="empty-tip"><span class="big">🎯</span>上传摩点众筹结算数据（modian_settlements.csv）后展示结算状态<br>示例：首款 50% → 中款 30% → 尾款 20% 分阶段到账</div></td></tr></tbody>';
+    s.textContent = '';
+    return;
+  }
+  const totalExp = round2(state.modian.reduce((x, m) => x + m.expected, 0));
+  const totalAct = round2(state.modian.reduce((x, m) => x + m.actual, 0));
+  const pend = state.modian.filter(m => !/已到账|完成/.test(m.status)).length;
+  s.innerHTML = '众筹结算进度：<strong>' + state.modian.length + '</strong> 期 · 应结算 <strong>' + fmt(totalExp) + '</strong> · 实际到账 <strong>' + fmt(totalAct) + '</strong> · 差额 <strong style="color:var(--red)">' + fmt(totalExp - totalAct) + '</strong>' +
+    (pend ? ' · 未到账 ' + pend + ' 期' : ' · 全部已到账 ✅');
+  let html = '<thead><tr><th>结算编号</th><th>结算阶段</th><th>申请日期</th><th>应结算金额</th><th>到账日期</th><th>实际到账</th><th>状态</th><th>备注</th></tr></thead><tbody>';
+  for (const m of state.modian){
+    const done = /已到账|完成/.test(m.status);
+    html += '<tr>' +
+      '<td>' + esc(m.no) + '</td>' +
+      '<td>' + esc(m.stage) + '</td>' +
+      '<td>' + fmtDate(m.applyDate) + '</td>' +
+      '<td class="num">' + fmt(m.expected) + '</td>' +
+      '<td>' + fmtDate(m.arriveDate) + '</td>' +
+      '<td class="num">' + fmt(m.actual) + '</td>' +
+      '<td>' + (done ? statusBadge(m.status, 'green') : statusBadge(m.status, 'amber')) + '</td>' +
+      '<td style="white-space:normal;min-width:200px;color:var(--ink-2)">' + esc(m.remark || '') + '</td>' +
+      '</tr>';
+  }
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+/* ---- Tab5 艺术家版税 ----
+   版税率来源优先级：上传的 artist_list.csv > 内置演示规则 > 全局默认税率
+   商品→设计师映射使用内置关键词规则（可在 ARTIST_RULES 中调整） */
+const ARTIST_RULES = [
+  { kw: '橘影神偷', name: '林小喵', rate: 0.08 },
+  { kw: '折耳骑士', name: '林小喵', rate: 0.08 },
+  { kw: '笨笨博士', name: '周布布', rate: 0.08 },
+  { kw: '软萌夹锁', name: '周布布', rate: 0.08 },
+  { kw: '奶牛猫', name: '刘星野', rate: 0.07 },
+  { kw: '波斯猫', name: '刘星野', rate: 0.07 },
+  { kw: '盲盒早鸟', name: '林小喵', rate: 0.08 },
+  { kw: '盲盒常规', name: '林小喵', rate: 0.08 },
+  { kw: '端盒', name: '林小喵', rate: 0.08 },
+  { kw: 'ALL-IN', name: '林小喵', rate: 0.08 },
+  { kw: '全家福', name: '黄多多', rate: 0.06 },
+  { kw: '毛绒挂件', name: '黄多多', rate: 0.06 },
+  { kw: '立牌', name: '黄多多', rate: 0.06 },
+  { kw: '钥匙扣', name: '何梦鹿', rate: 0.06 },
+  { kw: '徽章', name: '何梦鹿', rate: 0.06 },
+  { kw: '帆布袋', name: '杨桃桃', rate: 0.06 },
+  { kw: '贴纸', name: '杨桃桃', rate: 0.06 },
+  { kw: '手机壳', name: '何梦鹿', rate: 0.06 },
+  { kw: '明信片', name: '杨桃桃', rate: 0.06 },
+  { kw: '冰箱贴', name: '杨桃桃', rate: 0.06 },
+  { kw: '抱枕', name: '杨桃桃', rate: 0.06 }
+];
+
+/**
+ * 根据商品名称/ SKU 解析设计师与版税率。
+ * 内置关键词规则负责「商品 → 设计师」映射；若上传了 artist_list.csv，
+ * 则以其 分成比例 覆盖同名设计师的版税率，关联SKU 作为额外关键词兜底。
+ */
+function resolveArtist(sku, product, defaultRate){
+  const text = String(sku + ' ' + product).toLowerCase();
+  const uploaded = state.artistRules;
+  const rateOf = name => {
+    if (!uploaded.length) return defaultRate;
+    const u = uploaded.find(a => a.name === name);
+    return u ? u.rate : defaultRate;
+  };
+  for (const rule of ARTIST_RULES){
+    if (text.includes(rule.kw.toLowerCase())) return { name: rule.name, rate: rateOf(rule.name) };
+  }
+  // 上传规则兜底：关联SKU 关键词命中
+  if (uploaded.length){
+    for (const a of uploaded){
+      for (const sku of a.skus){
+        if (text.includes(sku.toLowerCase())) return { name: a.name, rate: a.rate };
+      }
+    }
+  }
+  return { name: '未分配', rate: defaultRate };
+}
+
+function renderTabRoyalty(){
+  const t = document.getElementById('royaltyTable');
+  const hint = document.getElementById('royaltyHint');
+  const defaultRate = toNum(document.getElementById('royaltyRate').value) / 100 || 0.05;
+  hint.textContent = state.artistRules.length ? '已使用上传的 artist_list.csv 版税率（' + state.artistRules.length + ' 位艺术家）' : '使用内置演示规则（关键词匹配），可上传 artist_list.csv 覆盖版税率';
+  if (!state.salesOrders.length){
+    t.innerHTML = '<tbody><tr><td colspan="6"><div class="empty-tip"><span class="big">🎨</span>载入销售数据后自动按设计师汇总版税</div></td></tr></tbody>';
+    return;
+  }
+  const map = new Map();
+  for (const o of state.salesOrders){
+    if (isReturn(o)) continue;
+    const { name, rate } = resolveArtist(o.sku, o.product, defaultRate);
+    if (!map.has(name)) map.set(name, { name, qty: 0, amount: 0, rate: 0, royalty: 0 });
+    const d = map.get(name);
+    d.qty += o.qty;
+    d.amount = round2(d.amount + o.actual);
+    d.rate = rate;
+    d.royalty = round2(d.royalty + o.actual * rate);
+  }
+  const list = [...map.values()].sort((a, b) => b.royalty - a.royalty);
+  const max = Math.max(...list.map(d => d.royalty), 1);
+  let html = '<thead><tr><th>设计师</th><th>销量(件)</th><th>销售金额(实收)</th><th>版税率</th><th>版税金额</th><th>占比</th></tr></thead><tbody>';
+  if (!list.length){
+    html += '<tr><td colspan="6"><div class="empty-tip"><span class="big">🎨</span>无可计算版税的销售记录</div></td></tr>';
+  }
+  for (const d of list){
+    html += '<tr>' +
+      '<td><strong>' + esc(d.name) + '</strong></td>' +
+      '<td class="num">' + fmtInt(d.qty) + '</td>' +
+      '<td class="num">' + fmt(d.amount) + '</td>' +
+      '<td>' + (d.rate * 100).toFixed(1) + '%</td>' +
+      '<td class="num"><strong>' + fmt(d.royalty) + '</strong></td>' +
+      '<td style="min-width:180px"><div class="dealer-bar-wrap">' +
+        '<div class="dealer-bar-track" title="' + esc(d.name) + ' 版税 ' + fmt(d.royalty) + '（' + (d.royalty / max * 100).toFixed(1) + '%）">' +
+          '<div class="dealer-bar-fill" style="width:' + (d.royalty / max * 100).toFixed(1) + '%"></div>' +
+        '</div><span class="dealer-bar-total">' + (d.royalty / max * 100).toFixed(1) + '%</span>' +
+      '</div></td>' +
+      '</tr>';
+  }
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+
+/* ---- AI 建议面板 ---- */
+function renderAI(){
+  const box = document.getElementById('aiList');
+  if (!state.ran && !state.salesOrders.length){
+    box.innerHTML = '<div class="empty-tip" style="padding:20px 0"><span class="big">🤖</span>对账后，此处将基于金额相似度 + 日期接近度 + 名称相似度为未匹配项提供 AI 建议</div>';
+    return;
+  }
+  if (!state.aiSuggestions.length){
+    box.innerHTML = '<div class="empty-tip" style="padding:20px 0"><span class="big">✨</span>暂无高置信建议，所有未匹配项均可通过上传补充数据或调整容差解决</div>';
+    return;
+  }
+  let html = '';
+  for (const s of state.aiSuggestions){
+    if (s.kind === 'tip'){
+      html += '<div class="ai-item"><div class="row"><span class="ai-chip">💡 提示</span><span class="from">' + esc(s.tip) + '</span></div></div>';
+      continue;
+    }
+    const isOrder = s.kind === 'order';
+    // 建议主体与候选对象：候选存放在 cands 中
+    const src = isOrder ? s.o : s.r;
+    const dst = isOrder ? s.cands[0].r : s.cands[0].o;
+    const label = isOrder ? '销售单 ' + s.o.docNo : '回款 ' + s.r.docNo + '（' + esc(s.r.payer) + '）';
+    const targetLabel = isOrder ? '回款 ' + dst.docNo + '（' + esc(dst.payer) + '）' : '销售单 ' + dst.docNo;
+    html += '<div class="ai-item">' +
+      '<div class="row">' +
+        '<span class="from"><strong>' + label + '</strong></span>' +
+        '<span class="arrow">→ 建议核销 →</span>' +
+        '<span class="from"><strong>' + targetLabel + '</strong></span>' +
+        '<span class="conf ' + (s.cands[0].score >= 0.85 ? 'high' : s.cands[0].score >= 0.65 ? 'mid' : 'low') + '">' + s.cands[0].score.toFixed(2) + '</span>' +
+      '</div>' +
+      '<div class="parts">' +
+        '<span class="ai-chip">金额相似 ' + (s.cands[0].amountSim * 100).toFixed(0) + '%</span>' +
+        '<span class="ai-chip">日期接近 ' + (s.cands[0].dateSim * 100).toFixed(0) + '%</span>' +
+        '<span class="ai-chip">名称相似 ' + (s.cands[0].nameSim * 100).toFixed(0) + '%</span>' +
+        '<span class="ai-chip">差额 ' + fmt(Math.abs(src.remaining - dst.remaining)) + '</span>' +
+        (s.cands.length > 1 ? '<span class="ai-chip">另有 ' + (s.cands.length - 1) + ' 个候选</span>' : '') +
+      '</div></div>';
+  }
+  box.innerHTML = html;
+}
+
+/* ---- 经销商下拉（含回款方） ---- */
+function populateDealerFilter(){
+  const sel = document.getElementById('dealerFilter');
+  const set = new Set();
+  state.salesOrders.forEach(o => set.add(o.dealerName));
+  state.receipts.forEach(r => set.add(r.payer));
+  sel.innerHTML = '<option value="">全部经销商</option>' +
+    [...set].sort((a, b) => a.localeCompare(b, 'zh')).map(d => '<option>' + esc(d) + '</option>').join('');
+}
+
+/* =====================================================================
+   导出（UTF-8 BOM，Excel 兼容）
+   ===================================================================== */
+function exportCSV(filename, rows){
+  if (!rows.length){ toast('没有可导出的数据', 'error'); return; }
+  const csv = typeof Papa !== 'undefined' ? Papa.unparse(rows) : simpleUnparse(rows);
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 300);
+  toast('已导出 ' + filename, 'success');
+}
+/** Papa 不可用时的简易序列化 */
+function simpleUnparse(rows){
+  const cols = Object.keys(rows[0]);
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  return [cols.map(q).join(',')].concat(rows.map(r => cols.map(c => q(r[c])).join(','))).join('\r\n');
+}
+
+function exportMatchCSV(){
+  exportCSV('对账结果_' + dateStamp() + '.csv', state.matchRows.map(r => ({
+    经销商名称: r.dealer, 销售单号: r.docNo, 开单日期: fmtDate(r.date), SKU: r.sku, 商品名称: r.product,
+    应收金额: r.amount, 回款单号: r.recNos, 到账日期: fmtDate(r.lastRecDate), 回款金额: r.recAmt,
+    匹配状态: r.status, 到期日: fmtDate(r.dueDate), 备注: r.remark
+  })));
+}
+function exportDiffCSV(){
+  exportCSV('差异清单_' + dateStamp() + '.csv', state.diffRows.map(r => ({
+    差异类型: r.type, 经销商付款方: r.dealer, 单号: r.no, 业务日期: fmtDate(r.date),
+    涉及金额: r.amt, 差额: r.diff, 到期日: fmtDate(r.due), 账期: r.bucketLabel, 说明: r.note
+  })));
+}
+function dateStamp(){
+  const d = new Date();
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+
+/* =====================================================================
+   事件绑定
+   ===================================================================== */
+document.getElementById('btnRun').addEventListener('click', runReconciliation);
+document.getElementById('dealerFilter').addEventListener('change', renderAll);
+document.getElementById('searchBox').addEventListener('input', renderAll);
+document.getElementById('btnExportMatch').addEventListener('click', exportMatchCSV);
+document.getElementById('btnExportDiff').addEventListener('click', exportDiffCSV);
+document.getElementById('btnRoyaltyApply').addEventListener('click', renderTabRoyalty);
+
+/* Tab 切换 */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* 回车触发对账 */
+document.getElementById('toleranceInput').addEventListener('keydown', e => { if (e.key === 'Enter') runReconciliation(); });
+
+/* 初始占位渲染 */
+renderTabMatch();
+renderTabDiff();
+renderTabDealer();
+renderTabCrowd();
+renderTabRoyalty();
+renderAI();
+
+console.log('%c🐱 BabyCat 回款智能对账台已就绪 — FIGUEROA 菲格洛亚', 'color:#9A7BB8;font-size:14px;font-weight:bold');
+</script>
+</body>
+</html>
