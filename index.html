@@ -55,6 +55,11 @@ body{
 .site-header h1{font-size:26px;letter-spacing:.5px;color:#4A3557}
 .site-header p{color:#6E5A80;margin-top:4px;font-size:13.5px}
 .header-actions{margin-left:auto}
+.version-badge{
+  display:inline-block;background:rgba(255,255,255,.75);color:var(--purple-dark);
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+  border:1px solid rgba(154,123,184,.3);letter-spacing:.5px;backdrop-filter:blur(4px);
+}
 .btn{
   border:none;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .18s;
 }
@@ -239,10 +244,21 @@ tbody tr:last-child td{border-bottom:none}
 
 /* ---------- 页脚 ---------- */
 .site-footer{
-  text-align:center;padding:22px 16px 30px;color:var(--ink-3);font-size:12px;line-height:1.9;
+  padding:30px 22px 24px;color:var(--ink-3);font-size:12.5px;line-height:1.9;
+  background:#fff;border-top:1px solid var(--line);margin-top:10px;
 }
 .site-footer a{color:var(--purple-dark);text-decoration:none}
 .site-footer a:hover{text-decoration:underline}
+.footer-grid{
+  max-width:1180px;margin:0 auto 16px;display:grid;
+  grid-template-columns:1.4fr 1fr 1fr;gap:20px;text-align:left;
+}
+.footer-col{display:flex;flex-direction:column;gap:3px}
+.footer-col strong{color:var(--ink);font-size:13px;margin-bottom:2px}
+.footer-bottom{
+  max-width:1180px;margin:0 auto;text-align:center;font-size:11px;
+  color:var(--ink-3);padding-top:14px;border-top:1px solid var(--line);
+}
 
 /* ---------- Toast ---------- */
 #toastBox{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:360px}
@@ -275,8 +291,10 @@ tbody tr:last-child td{border-bottom:none}
       <h1>BabyCat 回款智能对账台</h1>
       <p>菲格洛亚 FIGUEROA · 经销商回款对账系统</p>
     </div>
-    <div class="header-actions">
+    <div class="header-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="version-badge" title="产品版本">v1.0</span>
       <button class="btn btn-ghost" id="btnSample">📁 载入示例数据</button>
+      <a class="btn btn-ghost btn-small" href="mailto:3518835873@qq.com?subject=BabyCat%E5%9B%9E%E6%AC%BE%E5%AF%B9%E8%B4%A6%E5%8F%B0%20%E5%8F%8D%E9%A6%88" title="反馈建议">💬 反馈</a>
     </div>
   </div>
 </header>
@@ -421,8 +439,26 @@ tbody tr:last-child td{border-bottom:none}
 
 <!-- ============ 页脚 ============ -->
 <footer class="site-footer">
-  Built with Claude Code · AI-Native Reconciliation Demo · FIGUEROA BabyCat © 2026<br>
-  <a href="https://github.com/3518835873/figlora-reconciliation" target="_blank" rel="noopener">github.com/3518835873/figlora-reconciliation</a>
+  <div class="footer-grid">
+    <div class="footer-col">
+      <strong>🐱 BabyCat 回款智能对账台</strong>
+      <span>v1.0 · 更新于 2026-08-12</span>
+      <span>为菲格洛亚 FIGUEROA 定制</span>
+    </div>
+    <div class="footer-col">
+      <strong>链接</strong>
+      <a href="https://github.com/3518835873/figlora-reconciliation" target="_blank" rel="noopener">📦 GitHub 仓库</a>
+      <a href="https://github.com/3518835873/figlora-reconciliation/blob/main/README.md" target="_blank" rel="noopener">📖 使用文档</a>
+      <a href="mailto:3518835873@qq.com?subject=BabyCat%E5%9B%9E%E6%AC%BE%E5%AF%B9%E8%B4%A6%E5%8F%B0%20%E5%8F%8D%E9%A6%88">💬 反馈建议</a>
+    </div>
+    <div class="footer-col">
+      <strong>技术</strong>
+      <span>Built with Claude Code</span>
+      <span>Papa Parse · Vanilla JS</span>
+      <span>GitHub Pages 部署</span>
+    </div>
+  </div>
+  <div class="footer-bottom">FIGUEROA BabyCat © 2026 · AI-Native 财务工具原型 · 模拟数据仅供演示</div>
 </footer>
 
 <div id="toastBox"></div>
