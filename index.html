@@ -6,6 +6,8 @@
 <title>BabyCat 回款智能对账台 · FIGUEROA</title>
 <!-- Papa Parse CDN（离线时自动降级为内置简易 CSV 解析器） -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<!-- SheetJS — Excel .xlsx/.xls 解析 -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 /* ============================================================
    BabyCat 回款智能对账台 · FIGUEROA 菲格洛亚
@@ -307,19 +309,19 @@ tbody tr:last-child td{border-bottom:none}
       <div class="drop-zone" id="dropSales" title="点击或拖拽上传">
         <div class="dz-icon">📦</div>
         <div class="dz-title">销售出库数据</div>
-        <div class="dz-hint">sales_orders.csv · 点击选择或拖拽文件到此处</div>
+        <div class="dz-hint">sales_orders.csv / .xlsx · 点击选择或拖拽文件到此处</div>
         <div class="dz-file" id="salesFile"></div>
         <div class="dz-count" id="salesCount"></div>
-        <input type="file" accept=".csv,text/csv" hidden id="fileSales">
+        <input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden id="fileSales">
       </div>
       <!-- 银行回款数据 -->
       <div class="drop-zone" id="dropBank" title="点击或拖拽上传">
         <div class="dz-icon">🏦</div>
         <div class="dz-title">银行回款数据</div>
-        <div class="dz-hint">bank_receipts.csv · 点击选择或拖拽文件到此处</div>
+        <div class="dz-hint">bank_receipts.csv / .xlsx · 点击选择或拖拽文件到此处</div>
         <div class="dz-file" id="bankFile"></div>
         <div class="dz-count" id="bankCount"></div>
-        <input type="file" accept=".csv,text/csv" hidden id="fileBank">
+        <input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden id="fileBank">
       </div>
     </div>
 
@@ -328,11 +330,11 @@ tbody tr:last-child td{border-bottom:none}
       <summary>可选数据上传（Sell-Through / 摩点众筹 / 版税规则）</summary>
       <div class="mini-uploads">
         <div class="mini-drop" id="dropST">📊 经销商 Sell-Through<br>dealer_sell_through.csv<span id="stFile"></span></div>
-        <input type="file" accept=".csv,text/csv" hidden id="fileST">
+        <input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden id="fileST">
         <div class="mini-drop" id="dropModian">🎯 摩点众筹结算<br>modian_settlements.csv<span id="modianFile"></span></div>
-        <input type="file" accept=".csv,text/csv" hidden id="fileModian">
+        <input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden id="fileModian">
         <div class="mini-drop" id="dropArtist">🎨 艺术家版税规则<br>artist_list.csv<span id="artistFile"></span></div>
-        <input type="file" accept=".csv,text/csv" hidden id="fileArtist">
+        <input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden id="fileArtist">
       </div>
     </details>
   </section>
@@ -538,6 +540,23 @@ async function readFileText(file){
     try { const gbk = new TextDecoder('gbk').decode(buf); if (!gbk.includes('�')) text = gbk; } catch(e){ /* 保持 UTF-8 结果 */ }
   }
   return text.replace(/^﻿/, ''); // 去 BOM
+}
+
+/** 判断文件是否为 Excel 格式 */
+function isExcelFile(file){
+  const ext = (file.name || '').toLowerCase();
+  return ext.endsWith('.xlsx') || ext.endsWith('.xls');
+}
+
+/** 使用 SheetJS 解析 Excel 文件，返回对象数组（取第一个 Sheet） */
+function parseExcel(buf){
+  const wb = XLSX.read(buf, { type: 'array' });
+  const sheetName = wb.SheetNames[0];
+  if (!sheetName) throw new Error('工作簿中没有 Sheet');
+  const sheet = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  if (!rows || rows.length === 0) throw new Error('Sheet 中没有数据行');
+  return rows;
 }
 
 /** 简易 CSV 解析器（Papa Parse 离线不可用时的降级，支持引号与换行） */
@@ -752,17 +771,23 @@ const FILE_TYPES = {
   }
 };
 
-/** 加载 CSV 文件（type: sales|bank|sellthrough|modian|artist） */
+/** 加载数据文件（CSV / Excel 自动识别，type: sales|bank|sellthrough|modian|artist） */
 async function loadCSVFile(file, type){
   const def = FILE_TYPES[type];
   try {
-    const text = await readFileText(file);
     let rows;
-    try {
-      rows = parseCSV(text);
-    } catch (e) {
-      // 若 Papa 解析失败（如 BOM 干扰），降级内置解析器
-      rows = simpleParse(text);
+    if (isExcelFile(file)) {
+      // Excel 文件：用 SheetJS 解析
+      const buf = await file.arrayBuffer();
+      rows = parseExcel(buf);
+    } else {
+      // CSV 文件：先用 Papa Parse，失败则降级内置解析器
+      const text = await readFileText(file);
+      try {
+        rows = parseCSV(text);
+      } catch (e) {
+        rows = simpleParse(text);
+      }
     }
     const err = validateColumns(rows, def.required, def.label);
     if (err) { toast(err, 'error'); return false; }
@@ -772,7 +797,8 @@ async function loadCSVFile(file, type){
     const count = rows.length;
     updateFileBadge(type, file.name, count);
     state.files[type] = { name: file.name, count };
-    toast('✅ ' + def.label + '已载入：' + count + ' 行', 'success');
+    const fmt = isExcelFile(file) ? 'Excel' : 'CSV';
+    toast('✅ ' + def.label + '已载入（' + fmt + '）：' + count + ' 行', 'success');
     return true;
   } catch (e) {
     console.error(e);
